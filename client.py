@@ -1,4 +1,5 @@
 import socket
+import rfidData
 
 
 def MasterCard_entry(n):
@@ -13,22 +14,6 @@ def MasterCard_entry(n):
             print("WELCOME TO MASTERMODE")
             print("please insert a card to add or remove")
     f.close()
-
-
-def rfidAccess(n, d):
-    lines = []
-
-    rfid_ID = " "
-    rfid_ID = n+'\n'
-    f = open('/home/pi/Desktop/door_lock_project/rfidData.txt', 'r')
-
-    for line in f:
-        lines.append(line)
-    f.close()
-    for line in lines:
-        if rfid_ID == line:
-            d = d + 1
-            return d
 
 
 def Main():
@@ -46,7 +31,7 @@ def Main():
             break
         if (data != " "):
             print(data)
-            count = rfidAccess(data, count)
+            count = rfidData.Main(data, count)
             print(count)
             if count == 5:
                 print(Access)
