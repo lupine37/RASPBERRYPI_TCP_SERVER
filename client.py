@@ -1,38 +1,56 @@
 import socket
-import rfidData
+import sqlite3
+
+host = '192.168.1.105'
+port = 8888
+Access = "<GRANTED>"
+Denied = "<DENIED>"
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((host, port))
+conn = sqlite3.connect("rfidData.db")
+c = conn.cursor()
 
 
-def MasterCard_entry(n):
-    lines = []
+class rfidUID:
+    list = ()
 
-    MASTERCARD_ID = n+'\n'
-    f = open('/home/pi/Desktop/door_lock_project/MASTERCARD.txt', 'r')
+    def __init__(self, list):
+        self.house_no = list[0]
+        self.name = list[1]
+        self.uid_no = list[2]
+        self.card_type = list[3]
 
-    for line in f:
-        lines.append(line)
-        if (MASTERCARD_ID == line):
-            print("WELCOME TO MASTERMODE")
-            print("please insert a card to add or remove")
-    f.close()
+
+def sqlData(n):
+    data = ()
+    wronglist = (0, 0, 0, 0)
+    c.execute("SELECT * FROM rfidData WHERE UID_NO = :uid_no", {'uid_no': n})
+    data = c.fetchone()
+    if data:
+        return(data)
+    else:
+        return(wronglist)
 
 
 def Main():
-    host = '192.168.1.105'
-    port = 8888
-    Access = "<GRANTED>"
-    Denied = "<DENIED>"
     count = 0
-
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((host, port))
     while True:
-        data = s.recv(1024).decode('utf-8')
-        if not data:
+        clientData = s.recv(1024).decode('utf-8')
+        if not clientData:
             break
-        if (data != " "):
-            print(data)
-            count = rfidData.Main(data, count)
-            print(count)
+        if (clientData != " "):
+            print(clientData)
+            sqldata = sqlData(clientData)
+            try:
+                dataInfo = rfidUID(sqldata)
+            except Exception:
+                print("wrong card")
+            print(dataInfo.name)
+            if dataInfo.uid_no == clientData:
+                count = count + 1
+            else:
+                count = count - 1
             if count == 5:
                 print(Access)
                 s.send(Access.encode('utf-8'))
@@ -41,7 +59,6 @@ def Main():
                 print(Denied)
                 s.send(Denied.encode('utf-8'))
                 count = 0
-
     s.close()
 
 
