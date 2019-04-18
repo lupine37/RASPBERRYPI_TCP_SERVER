@@ -34,10 +34,16 @@ def select_sqlData(n):
 
 
 def Add_sqlData(n):
+    uid_no = ""
     c.execute("SELECT UID_NO FROM rfidData WHERE UID_NO = :uid_no",
               {'uid_no': n})
     data = c.fetchone()
-    for uid_no in data:
+    try:
+        for raw in data:
+            uid_no = raw
+    except Exception:
+        pass
+    finally:
         if uid_no == n:
             print("ALREADY EXIST")
         else:
@@ -46,12 +52,14 @@ def Add_sqlData(n):
 
             with conn:
                 c.execute("""INSERT INTO rfidData VALUES
-                           (:house_no, :name, :uid_no,:card_type)""",
+                          (:house_no, :name, :uid_no, :card_type)""",
                           {'house_no': house_no, 'name': name,
                            'uid_no': n, 'card_type': 'ORD'})
+            print("ADDED")
 
 
 def Remove_sqlData(n):
+    uid_no = ""
     c.execute("SELECT UID_NO FROM rfidData WHERE UID_NO = :uid_no",
               {'uid_no': n})
     data = c.fetchone()
@@ -65,7 +73,7 @@ def Remove_sqlData(n):
 def Mastermode():
     cardUID = ""
     response = input("ARE YOU SURE FOR MASTERMODE?(yes/no) ")
-    if response == 'yes':
+    if response == 'YES':
         while True:
             response = input("TO ADD OR REMOVE A CARD OR EXIT: ")
             if response == 'ADD':
@@ -85,12 +93,12 @@ def Mastermode():
                     if not cardUID:
                         break
                     if cardUID != " ":
-                        print(cardUID)
+                        print("Remove "+cardUID)
                         Remove_sqlData(cardUID)
                         break
             elif response == 'EXIT':
                 break
-    elif response == 'no':
+    elif response == 'NO':
         print("ok")
 
 
