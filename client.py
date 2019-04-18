@@ -21,14 +21,11 @@ def Main():
     port = 8888
     Access = "<GRANTED>"
     Denied = "<DENIED>"
-    FingerID = "<ID>"
     count = 0
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((host, port))
     while True:
-        if count == 11:
-            count = 0
         data = s.recv(1024).decode('utf-8')
         if not data:
             break
@@ -37,24 +34,9 @@ def Main():
             count = rfidData.Main(data, count)
             print(count)
             if count == 5:
-                print(FingerID)
-                s.send(FingerID.encode('utf-8'))
-                while True:
-                    count = 0
-                    data = s.recv(1024).decode('utf-8')
-                    if (data != " "):
-                        print(data)
-                        count = rfidData.Main(data, count)
-                        if count == 11:
-                            print(Access)
-                            s.send(Access.encode('utf-8'))
-                            count = 0
-                            break
-                        elif count == -5:
-                            print(Denied)
-                            s.send(Denied.encode('utf-8'))
-                            count = 0
-                            break
+                print(Access)
+                s.send(Access.encode('utf-8'))
+                count = 0
             elif count == -5:
                 print(Denied)
                 s.send(Denied.encode('utf-8'))

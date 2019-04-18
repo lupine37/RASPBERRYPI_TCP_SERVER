@@ -3,16 +3,14 @@ import sqlite3
 
 conn = sqlite3.connect("rfidData.db")
 c = conn.cursor()
-rfid2 = ""
 
 
 class rfidUID:
-    def __init__(self, uid_no, name, house_no, card_type, fingerID):
+    def __init__(self, uid_no, name, house_no, card_type):
         self.uid_no = uid_no
         self.name = name
         self.house_no = house_no
         self.card_type = card_type
-        self.fingerID = fingerID
 
 
 def GetMaxHouseNo():
@@ -34,43 +32,17 @@ def GetMaxHouseNo():
     # conn.commit()
 
 
-def identification(n):
-    list = []
-    for L in n:
-        list.append(L)
-    if list[0] == '$':
-        return '$'
-    elif list[0] == '#':
-        return '#'
-
-
 def Main(n, d):
-    code = identification(n)
-    if code == '$':
-        rfid = n.replace("$", "")
-        rfid2 = rfid
-        c.execute("SELECT UID_NO FROM rfidData")
-        data = c.fetchall()
-        for row in data:
-            for column in row:
-                if column == rfid:
-                    d = d + 1
-                    return(d)
-                else:
-                    d = d - 1
-                    return(d)
-
-    elif code == '#':
-        print(rfid2)
-        c.execute("SELECT FINGERPRINT_ID FROM rfidData")
-        data = c.fetchall()
-        for row in data:
-            for column in row:
-                if column == n:
-                    return(11)
-                else:
-                    return(-5)
-    return (d)
+    c.execute("SELECT UID_NO FROM rfidData")
+    data = c.fetchall()
+    for row in data:
+        for column in row:
+            if column == n:
+                d = d + 1
+                return(d)
+            else:
+                d = d - 1
+                return(d)
 
 
 if __name__ == '__main__':
