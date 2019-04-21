@@ -35,6 +35,26 @@ def select_sqlData(n):
         return(wronglist)
 
 
+def EnrollFingerID(n):
+    with s:
+        s.send("<Enroll>".encode('utf-8'))
+    while True:
+        data = s.recv(1024).decode('utf-8')
+        if not data:
+            break
+        if data != " ":
+            print(data)
+            if data == "house_no":
+                with s:
+                    s.send(n.encode("utf-8"))
+                    while True:
+                        data = s.recv(1024).decode('utf-8')
+                        if not data:
+                            break
+                        if data != " ":
+                            return data
+
+
 def Add_sqlData(n):
     list = []
     n = n.replace(" ", "")
@@ -63,12 +83,16 @@ def Add_sqlData(n):
             else:
                 name = input("NAME: ")
                 house_no = input("HOUSE NO: ")
+                finger_ID = EnrollFingerID(house_no)
+                print(finger_ID)
 
                 with conn:
                     c.execute("""INSERT INTO rfidData VALUES
-                              (:house_no, :name, :uid_no, :card_type)""",
+                              (:house_no, :name, :uid_no, :card_type, :
+                              finger_id)""",
                               {'house_no': house_no, 'name': name,
-                               'uid_no': n, 'card_type': 'ORD'})
+                               'uid_no': n, 'card_type': 'ORD',
+                               'finger_ID': finger_ID})
                 print("ADDED")
 
 
