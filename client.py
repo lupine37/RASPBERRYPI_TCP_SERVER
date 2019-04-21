@@ -3,6 +3,7 @@ import sqlite3
 
 host = '192.168.1.105'
 port = 8888
+id_no = "<ID>"
 Access = "<GRANTED>"
 Denied = "<DENIED>"
 
@@ -20,11 +21,12 @@ class rfidUID:
         self.name = list[1]
         self.uid_no = list[2]
         self.card_type = list[3]
+        self.finger_no = list[4]
 
 
 def select_sqlData(n):
     data = ()
-    wronglist = (0, 0, 0, 0)
+    wronglist = (0, 0, 0, 0, 0)
     c.execute("SELECT * FROM rfidData WHERE UID_NO = :uid_no", {'uid_no': n})
     data = c.fetchone()
     if data:
@@ -145,6 +147,8 @@ def Main():
                 dataInfo = rfidUID(sqldata)
             except Exception:
                 print("wrong card")
+            except UnboundLocalError:
+                pass
             print(dataInfo.name)
             if dataInfo.uid_no == clientData:
                 if dataInfo.card_type == "MASTERCARD":
@@ -156,7 +160,20 @@ def Main():
                 count = count - 1
             if count == 3:
                 print(Access)
-                s.send(Access.encode('utf-8'))
+                s.send(id_no.encode('utf-8'))
+                while True:
+                    data = s.recv(1024).decode('utf-8')
+                    if data != " ":
+                        print(data)
+                        if dataInfo.finger_no == data:
+                            s.send(Access.encode('utf-8'))
+                            break
+                        elif data == 'break':
+                            break
+                        else:
+                            print(Denied)
+                            s.send(Denied.encode('utf-8'))
+                            break
                 count = 0
             elif count == -3:
                 print(Denied)
