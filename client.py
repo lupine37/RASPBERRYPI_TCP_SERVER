@@ -38,21 +38,14 @@ def select_sqlData(n):
 def EnrollFingerID(n):
     with s:
         s.send("<Enroll>".encode('utf-8'))
-    while True:
-        data = s.recv(1024).decode('utf-8')
-        if not data:
-            break
-        if data != " ":
-            print(data)
-            if data == "house_no":
-                with s:
-                    s.send(n.encode("utf-8"))
-                    while True:
-                        data = s.recv(1024).decode('utf-8')
-                        if not data:
-                            break
-                        if data != " ":
-                            return data
+        while True:
+            s.send(n.encode("utf-8"))
+            while True:
+                data = s.recv(1024).decode('utf-8')
+                if not data:
+                    break
+                if data != " ":
+                    return data
 
 
 def Add_sqlData(n):
