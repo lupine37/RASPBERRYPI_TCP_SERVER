@@ -34,44 +34,73 @@ def select_sqlData(n):
 
 
 def Add_sqlData(n):
+    list = []
+    n = n.replace(" ", "")
+    for line in n:
+        list.append(line)
+    n = ''.join(list[0:8])
     uid_no = ""
+    c.execute("SELECT UID_NO FROM rfidData WHERE CARD_TYPE = 'MASTERCARD'")
+    cardInfo = c.fetchone()
     c.execute("SELECT UID_NO FROM rfidData WHERE UID_NO = :uid_no",
               {'uid_no': n})
     data = c.fetchone()
     try:
+        for raw in cardInfo:
+            MasterCard = raw
         for raw in data:
             uid_no = raw
     except Exception:
         pass
     finally:
-        if uid_no == n:
-            print("ALREADY EXIST")
+        if n == MasterCard:
+            print("Try Again")
         else:
-            name = input("NAME: ")
-            house_no = input("HOUSE NO: ")
+            if uid_no == n:
+                print("ALREADY EXIST")
+            else:
+                name = input("NAME: ")
+                house_no = input("HOUSE NO: ")
 
-            with conn:
-                c.execute("""INSERT INTO rfidData VALUES
-                          (:house_no, :name, :uid_no, :card_type)""",
-                          {'house_no': house_no, 'name': name,
-                           'uid_no': n, 'card_type': 'ORD'})
-            print("ADDED")
+                with conn:
+                    c.execute("""INSERT INTO rfidData VALUES
+                              (:house_no, :name, :uid_no, :card_type)""",
+                              {'house_no': house_no, 'name': name,
+                               'uid_no': n, 'card_type': 'ORD'})
+                print("ADDED")
 
 
 def Remove_sqlData(n):
+    list = []
+    n = n.replace(" ", "")
+    for line in n:
+        list.append(line)
+    n = ''.join(list[0:8])
     uid_no = ""
+    c.execute("SELECT UID_NO FROM rfidData WHERE CARD_TYPE = 'MASTERCARD'")
+    cardInfo = c.fetchone()
     c.execute("SELECT UID_NO FROM rfidData WHERE UID_NO = :uid_no",
               {'uid_no': n})
     data = c.fetchone()
-    for uid_no in data:
-        if uid_no == n:
-            with conn:
-                c.execute("""DELETE FROM rfidData WHERE UID_no = :uid_no""",
-                          {'uid_no': n})
+    try:
+        for raw in cardInfo:
+            MasterCard = raw
+        for raw in data:
+            uid_no = raw
+    except TypeError:
+        print("card Does Not Exist")
+    finally:
+        if n == MasterCard:
+            print("Try Again")
+        else:
+            if uid_no == n:
+                with conn:
+                    c.execute("""DELETE FROM rfidData WHERE UID_NO =
+                                  :uid_no""",
+                              {'uid_no': n})
 
 
 def Mastermode():
-    cardUID = ""
     response = input("ARE YOU SURE FOR MASTERMODE?(yes/no) ")
     if response == 'YES':
         while True:
@@ -79,6 +108,7 @@ def Mastermode():
             if response == 'ADD':
                 print("PLACE YOUR CARD")
                 while True:
+                    cardUID = ""
                     cardUID = s.recv(1024).decode('utf-8')
                     if not cardUID:
                         break
@@ -118,6 +148,7 @@ def Main():
             print(dataInfo.name)
             if dataInfo.uid_no == clientData:
                 if dataInfo.card_type == "MASTERCARD":
+                    clientData = ""
                     Mastermode()
                 elif dataInfo.card_type == "ORD":
                     count = count + 1
