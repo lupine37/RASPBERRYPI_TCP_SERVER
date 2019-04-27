@@ -36,20 +36,26 @@ def select_sqlData(n):
 
 
 def EnrollFingerID(n):
-    with s:
-        s.send("<Enroll>".encode('utf-8'))
-        while True:
-            s.send(n.encode("utf-8"))
-            while True:
-                data = s.recv(1024).decode('utf-8')
-                if not data:
-                    break
-                if data != " ":
-                    return data
+    s.send("<Enroll>".encode('utf-8'))
+    while True:
+        data = s.recv(1024).decode('utf-8')
+        if not data:
+            break
+        if data != " ":
+            print(data)
+            if data == 'idNo':
+                s.send(n.encode('utf-8'))
+            elif data == "Stored!":
+                return ("#"+n)
+                break
+            elif data == 'break':
+                return 0
+                break
 
 
 def Add_sqlData(n):
     list = []
+    idNo = 0
     n = n.replace(" ", "")
     for line in n:
         list.append(line)
@@ -76,17 +82,16 @@ def Add_sqlData(n):
             else:
                 name = input("NAME: ")
                 house_no = input("HOUSE NO: ")
-                finger_ID = EnrollFingerID(house_no)
-                print(finger_ID)
-
-                with conn:
-                    c.execute("""INSERT INTO rfidData VALUES
-                              (:house_no, :name, :uid_no, :card_type, :
-                              finger_id)""",
-                              {'house_no': house_no, 'name': name,
-                               'uid_no': n, 'card_type': 'ORD',
-                               'finger_ID': finger_ID})
-                print("ADDED")
+                idNo = EnrollFingerID(house_no)
+                if idNo != 0:
+                    print(idNo)
+                    with conn:
+                        c.execute("""INSERT INTO rfidData VALUES
+                                  (:house_no, :name, :uid_no, :card_type, :idNo)""",
+                                  {'house_no': house_no, 'name': name,
+                                   'uid_no': n, 'card_type': 'ORD',
+                                   'idNo': idNo})
+                    print("ADDED")
 
 
 def Remove_sqlData(n):
@@ -127,7 +132,6 @@ def Mastermode():
             if response == 'ADD':
                 print("PLACE YOUR CARD")
                 while True:
-                    cardUID = ""
                     cardUID = s.recv(1024).decode('utf-8')
                     if not cardUID:
                         break
@@ -153,6 +157,7 @@ def Mastermode():
 
 def Main():
     count = 0
+    id_count = 0
     while True:
         clientData = s.recv(1024).decode('utf-8')
         if not clientData:
@@ -188,14 +193,16 @@ def Main():
                         elif data == 'break':
                             break
                         else:
-                            print(Denied)
-                            s.send(Denied.encode('utf-8'))
-                            break
+                            id_count = id_count + 1
                 count = 0
             elif count == -3:
                 print(Denied)
                 s.send(Denied.encode('utf-8'))
                 count = 0
+            elif id_count == 3:
+                print(Denied)
+                s.send(Denied.encode('utf-8'))
+                id_count = 0
     s.close()
 
 
