@@ -1,14 +1,18 @@
 import socket
 import sqlite3
 
-host = '192.168.1.105'
+host = '192.168.1.141'
 port = 8888
 id_no = "<ID>"
 Access = "<GRANTED>"
 Denied = "<DENIED>"
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect((host, port))
+s.bind((host, port))
+s.listen(1)
+print("listening to client....")
+con, addr = s.accept()
+print("Connected")
 conn = sqlite3.connect("rfidData.db")
 c = conn.cursor()
 
@@ -36,16 +40,16 @@ def select_sqlData(n):
 
 
 def EnrollFingerID(n):
-    s.send("<Enroll>".encode('utf-8'))
+    con.send("<Enroll>".encode('utf-8'))
     while True:
-        data = s.recv(1024).decode('utf-8')
+        data = con.recv(1024).decode('utf-8')
         if not data:
             break
         if data != " ":
             print(data)
             if data == 'idNo':
-                s.send(n.encode('utf-8'))
-            elif data == "Stored!":
+                con.send(n.encode('utf-8'))
+            elif data == "Stored":
                 return ("#"+n)
                 break
             elif data == 'break':
@@ -87,7 +91,8 @@ def Add_sqlData(n):
                     print(idNo)
                     with conn:
                         c.execute("""INSERT INTO rfidData VALUES
-                                  (:house_no, :name, :uid_no, :card_type, :idNo)""",
+                                  (:house_no, :name, :uid_no, :card_type,
+                                   :idNo)""",
                                   {'house_no': house_no, 'name': name,
                                    'uid_no': n, 'card_type': 'ORD',
                                    'idNo': idNo})
@@ -125,41 +130,37 @@ def Remove_sqlData(n):
 
 
 def Mastermode():
-    response = input("ARE YOU SURE FOR MASTERMODE?(yes/no) ")
-    if response == 'YES':
-        while True:
-            response = input("TO ADD OR REMOVE A CARD OR EXIT: ")
-            if response == 'ADD':
-                print("PLACE YOUR CARD")
-                while True:
-                    cardUID = s.recv(1024).decode('utf-8')
-                    if not cardUID:
-                        break
-                    if cardUID != " ":
-                        print(cardUID)
-                        Add_sqlData(cardUID)
-                        break
-            elif response == 'REMOVE':
-                print("PLACE YOUR CARD")
-                while True:
-                    cardUID = s.recv(1024).decode('utf-8')
-                    if not cardUID:
-                        break
-                    if cardUID != " ":
-                        print("Remove "+cardUID)
-                        Remove_sqlData(cardUID)
-                        break
-            elif response == 'EXIT':
-                break
-    elif response == 'NO':
-        print("ok")
+    while True:
+        response = input("TO ADD OR REMOVE A CARD OR EXIT: ")
+        if response == 'ADD':
+            print("PLACE YOUR CARD")
+            while True:
+                cardUID = con.recv(1024).decode('utf-8')
+                if not cardUID:
+                    break
+                if cardUID != " ":
+                    print(cardUID)
+                    Add_sqlData(cardUID)
+                    break
+        elif response == 'REMOVE':
+            print("PLACE YOUR CARD")
+            while True:
+                cardUID = con.recv(1024).decode('utf-8')
+                if not cardUID:
+                    break
+                if cardUID != " ":
+                    print("Remove "+cardUID)
+                    Remove_sqlData(cardUID)
+                    break
+        elif response == 'EXIT':
+            break
 
 
 def Main():
     count = 0
     id_count = 0
     while True:
-        clientData = s.recv(1024).decode('utf-8')
+        clientData = con.recv(1024).decode('utf-8')
         if not clientData:
             break
         if (clientData != " "):
@@ -182,13 +183,13 @@ def Main():
                 count = count - 1
             if count == 3:
                 print(Access)
-                s.send(id_no.encode('utf-8'))
+                con.send(id_no.encode('utf-8'))
                 while True:
-                    data = s.recv(1024).decode('utf-8')
+                    data = con.recv(1024).decode('utf-8')
                     if data != " ":
                         print(data)
                         if dataInfo.finger_no == data:
-                            s.send(Access.encode('utf-8'))
+                            con.send(Access.encode('utf-8'))
                             break
                         elif data == 'break':
                             break
@@ -197,13 +198,13 @@ def Main():
                 count = 0
             elif count == -3:
                 print(Denied)
-                s.send(Denied.encode('utf-8'))
+                con.send(Denied.encode('utf-8'))
                 count = 0
             elif id_count == 3:
                 print(Denied)
-                s.send(Denied.encode('utf-8'))
+                con.send(Denied.encode('utf-8'))
                 id_count = 0
-    s.close()
+    con.close()
 
 
 if __name__ == '__main__':
