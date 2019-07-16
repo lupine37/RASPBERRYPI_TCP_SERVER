@@ -1,7 +1,7 @@
 import socket
 import sqlite3
 
-host = '192.168.1.141'
+host = '192.168.1.171'
 port = 8888
 id_no = "<ID>"
 Access = "<GRANTED>"
@@ -186,6 +186,8 @@ def Main():
                 con.send(id_no.encode('utf-8'))
                 while True:
                     data = con.recv(1024).decode('utf-8')
+                    if not data:
+                        break
                     if data != " ":
                         print(data)
                         if dataInfo.finger_no == data:
