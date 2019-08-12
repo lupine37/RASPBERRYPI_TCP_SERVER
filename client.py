@@ -1,17 +1,11 @@
-import socket
 import sqlite3
+from Server import con
+from Server import data
 
-host = '192.168.1.171'
-port = 8888
 id_no = "<ID>"
 Access = "<GRANTED>"
 Denied = "<DENIED>"
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind((host, port))
-s.listen(1)
-print("listening to client....")
-con, addr = s.accept()
 print("Connected")
 conn = sqlite3.connect("rfidData.db")
 c = conn.cursor()
@@ -160,7 +154,7 @@ def Main():
     count = 0
     id_count = 0
     while True:
-        clientData = con.recv(1024).decode('utf-8')
+        clientData = data
         if not clientData:
             break
         if (clientData != " "):
