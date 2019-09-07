@@ -42,7 +42,7 @@ def accept_wrapper():
             if key.data is None:
                 conn, addr = sock.accept()
                 print('accepted connection from:', addr)
-                dataBase.update_port(addr)
+                dataBase.update_port_count(addr)
                 data = Message(sel, conn, addr)
                 events = selectors.EVENT_READ | selectors.EVENT_WRITE
                 sel.register(conn, events, data=data)

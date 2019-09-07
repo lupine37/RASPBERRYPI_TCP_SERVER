@@ -1,6 +1,6 @@
-
 import Server
 import dataBase
+import pdb
 
 message = "hi"
 id_no = "<ID>"
@@ -20,7 +20,6 @@ class rfidUID:
 
 
 def Main():
-    count = 0
     while True:
         Server.accept_wrapper()
         server_data = Server.recvData()
@@ -40,10 +39,20 @@ def Main():
                     pass
                 print(dataInfo.name)
                 if dataInfo.uid_no == data:
+                    countdata = dataBase.select_count(ipAddr[0])
+                    for c in countdata:
+                        count = c
                     count = count + 1
+                    print(count)
+                    dataBase.update_count(ipAddr[0], count)
                 else:
+                    countdata = dataBase.select_count(ipAddr[0])
+                    for c in countdata:
+                        count = c
                     count = count - 1
-                if count == 2:
+                    print(count)
+                    dataBase.update_count(ipAddr[0], count)
+                if count == 3:
                     print(Access)
                     Server.sendData(id_no, ipAddr)
                     while True:
@@ -56,11 +65,15 @@ def Main():
                                 break
                             elif data == 'break':
                                 break
-                    count = 0
+                    dataBase.update_count(ipAddr[0], 0)
+                    for c in countdata:
+                        count = c
                 elif count == -2:
                     print(Denied)
                     Server.sendData(Denied, ipAddr)
-                    count = 0
+                    dataBase.update_count(ipAddr[0], 0)
+                    for c in countdata:
+                        count = c
             else:
                 house_no = 'HOUSE' + str(house_no)
                 UIDInfo = dataBase.select_sqlData(house_no)
@@ -69,18 +82,27 @@ def Main():
                 print(UID_no)
                 print(data)
                 if data == UID_no:
+                    countdata = dataBase.select_count(ipAddr[0])
+                    for c in countdata:
+                        count = c
                     count = count + 1
                     print(count)
+                    dataBase.update_count(ipAddr[0], count)
                 else:
+                    countdata = dataBase.select_count(ipAddr[0])
+                    for c in countdata:
+                        count = c
                     count = count - 1
+                    print(count)
+                    dataBase.update_count(ipAddr[0], count)
                 if count == 3:
                     print(Access)
                     Server.sendData(Access, ipAddr)
-                    count = 0
+                    dataBase.update_count(ipAddr[0], 0)
                 elif count == -3:
                     print(Denied)
                     Server.sendData(Denied, ipAddr)
-                    count = 0
+                    dataBase.update_count(ipAddr[0], 0)
 
 
 if __name__ == '__main__':
