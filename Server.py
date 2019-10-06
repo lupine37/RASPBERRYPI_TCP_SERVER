@@ -3,9 +3,11 @@ import selectors
 import dataBase
 
 
-HOST = '192.168.1.170'
+HOST = '192.168.1.119'
 PORT = 8888
-message = "hi"
+startMarker = '<'
+endMarker = '>'
+Data = ""
 
 sel = selectors.DefaultSelector()
 
@@ -51,21 +53,29 @@ def accept_wrapper():
 
 
 def recvData():
-    event = sel.select(timeout=None)
-    for key, mask in event:
-        sock = key.fileobj
-        data = key.data
-        if key.data is not None:
-            if mask & selectors.EVENT_READ:
-                recv_data = sock.recv(1024)
-                if recv_data:
-                    recv_data = recv_data.decode('utf-8')
-                    if recv_data != " ":
-                        return(recv_data, data.addr)
-                else:
-                    print('closing connection to', data.addr)
-                    sel.unregister(sock)
-                    sock.close()
+    lst = []
+    while True:
+        event = sel.select(timeout=None)
+        for key, mask in event:
+            sock = key.fileobj
+            data = key.data
+            if key.data is not None:
+                if mask & selectors.EVENT_READ:
+                    recv_data = sock.recv(1024)
+                    if recv_data:
+                        recv_data = recv_data.decode('utf-8')
+                        if recv_data != " ":
+                            if recv_data[0] == startMarker:
+                                lst.append(recv_data[1:-1])
+                                Data = ''.join(lst)
+                                if recv_data[-1] == endMarker:
+                                    return(Data, data.addr)
+                                    break
+                    else:
+                        print('closing connection to', data.addr)
+                        sel.unregister(sock)
+                        sock.close()
+                        break
 
 
 def sendData(recvData, ipAddr):
