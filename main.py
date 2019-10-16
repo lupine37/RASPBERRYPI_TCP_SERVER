@@ -3,7 +3,7 @@ import dataBase
 import pdb
 
 message = "hi"
-id_no = "<ID>"
+template = "<TEMPLATE>"
 Access = "<GRANTED>"
 Denied = "<DENIED>"
 
@@ -54,17 +54,18 @@ def Main():
                     dataBase.update_count(ipAddr[0], count)
                 if count == 3:
                     print(Access)
-                    Server.sendData(id_no, ipAddr)
+                    Server.sendData(template, ipAddr)
                     while True:
                         Server_data = Server.recvData()
                         if Server_data is not None:
                             data = Server_data[0]
                             print(data)
-                            if dataInfo.finger_no == data:
-                                Server.sendData(Access, ipAddr)
-                                break
-                            elif data == 'break':
-                                break
+                            break
+                            # if dataInfo.finger_no == data:
+                            #     Server.sendData(Access, ipAddr)
+                            #     break
+                            # elif data == 'break':
+                            #     break
                     dataBase.update_count(ipAddr[0], 0)
                     for c in countdata:
                         count = c

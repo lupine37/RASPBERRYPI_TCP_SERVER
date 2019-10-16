@@ -3,11 +3,10 @@ import selectors
 import dataBase
 
 
-HOST = '192.168.1.119'
+HOST = '192.168.1.145'
 PORT = 8888
 startMarker = '<'
 endMarker = '>'
-Data = ""
 
 sel = selectors.DefaultSelector()
 
@@ -53,24 +52,32 @@ def accept_wrapper():
 
 
 def recvData():
+    Data = ""
+    recvState = True
+    appendState = False
     lst = []
-    while True:
-        event = sel.select(timeout=None)
-        for key, mask in event:
-            sock = key.fileobj
-            data = key.data
-            if key.data is not None:
-                if mask & selectors.EVENT_READ:
+    event = sel.select(timeout=None)
+    for key, mask in event:
+        sock = key.fileobj
+        data = key.data
+        if key.data is not None:
+            if mask & selectors.EVENT_READ:
+                while recvState == True:
                     recv_data = sock.recv(1024)
                     if recv_data:
                         recv_data = recv_data.decode('utf-8')
                         if recv_data != " ":
-                            if recv_data[0] == startMarker:
-                                lst.append(recv_data[1:-1])
-                                Data = ''.join(lst)
-                                if recv_data[-1] == endMarker:
-                                    return(Data, data.addr)
-                                    break
+                            for rc in recv_data:
+                                if rc == startMarker:
+                                    appendState = True
+                                elif appendState == True:
+                                    if rc != endMarker:
+                                        lst.append(rc)
+                                    else:
+                                        Data = ''.join(lst)
+                                        appendState = False
+                                        recvState = False
+                                        return(Data, data.addr)
                     else:
                         print('closing connection to', data.addr)
                         sel.unregister(sock)
