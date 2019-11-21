@@ -3,7 +3,7 @@ import selectors
 import dataBase
 
 
-HOST = '192.168.1.145'
+HOST = '192.168.1.129'
 PORT = 8888
 startMarker = '<'
 endMarker = '>'
@@ -47,6 +47,7 @@ def accept_wrapper():
                 data = Message(sel, conn, addr)
                 events = selectors.EVENT_READ | selectors.EVENT_WRITE
                 sel.register(conn, events, data=data)
+                return(addr)
     except ConnectionResetError:
         print("one of the clients have shut down!")
 
@@ -85,16 +86,18 @@ def recvData():
                         break
 
 
-def sendData(recvData, ipAddr):
+def sendData(send_data, ipAddr):
     event = sel.select(timeout=None)
     for key, mask in event:
-        data = key.data
-        if key.data is not None:
-            addr = data.addr
-            if addr == ipAddr:
-                sock = key.fileobj
-                print(recvData, addr)
-                sock.send(recvData.encode('utf-8'))
+        if mask & selectors.EVENT_WRITE:
+            data = key.data
+            if key.data is not None:
+                addr = data.addr
+                if addr == ipAddr:
+                    sock = key.fileobj
+                    # send_data = startMarker + recv_data + endMarker
+                    # print(recv_data, addr)
+                    sock.send(send_data.encode('utf-8'))
         # if key.fd == 7:
         #     print(key.fileobj)
         # if recvData is not None:

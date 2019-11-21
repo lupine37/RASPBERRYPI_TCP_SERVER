@@ -1,8 +1,10 @@
 import sqlite3
+import binascii
+import struct
 
 conn = sqlite3.connect("LockDatabase.db")
 c = conn.cursor()
-
+# imgDir = '/home/pi/Documents/Projects/fingeprintProject/Images/fingerprint1.bmp'
 
 def update_port_count(b):
     print(b[1])
@@ -62,6 +64,21 @@ def update_count(n, b):
                   WHERE IP_ADDRESS = :ipAddr""",
                   {'count': b, 'ipAddr': n})
 
+def updateTemplate(name, template):
+    # print(template)
+    with conn:
+        c.execute("""UPDATE MainLock SET FINGERPRINT_IMAGE = :image
+                   WHERE NAME = :name""", {'name': name, 'image': template})
+
+def selectTemplate(name):
+    lst = []
+    c.execute("SELECT FINGERPRINT_IMAGE FROM MainLock WHERE NAME = :name", {'name': name})
+    data = c.fetchone()
+    # print(len(data[0]))
+    return(data)
+    # print(binascii.hexlify(data[0]))
+# updateTemplate('KENNEDY', imgDir)
+# selectTemplate('REGINA')
     # def add_sqlData(n):
     #     list = []
     #     idNo = 0
