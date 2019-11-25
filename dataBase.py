@@ -6,6 +6,16 @@ conn = sqlite3.connect("LockDatabase.db")
 c = conn.cursor()
 # imgDir = '/home/pi/Documents/Projects/fingeprintProject/Images/fingerprint1.bmp'
 
+def select_sqlData(n):
+    data = ()
+    wronglist = (0, 0, 0, 0, 0)
+    c.execute("SELECT * FROM rfidData WHERE UID_NO = :uid_no", {'uid_no': n})
+    data = c.fetchone()
+    if data:
+        return(data)
+    else:
+        return(wronglist)
+
 def update_port_count(b):
     print(b[1])
     with conn:
@@ -23,7 +33,7 @@ def select_IPAddr(n):
 
 def select_sqlMainData(n):
     data = ()
-    wronglist = (0, 0, 0, 0, 0)
+    wronglist = (0, 0, 0, 0, 0, 0)
     c.execute("SELECT * FROM MainLock WHERE UID_NO = :uid_no", {'uid_no': n})
     data = c.fetchone()
     if data:
@@ -34,7 +44,6 @@ def select_sqlMainData(n):
 
 def select_sqlData(n):
     data = ()
-    wronglist = (0, 0)
     query = "SELECT * FROM " + n
     c.execute(query)
     data = c.fetchone()
@@ -49,36 +58,49 @@ def select_house_no(n):
     if house_no:
         return(house_no)
 
+def select_uidNo(uid_no):
+    c.execute("SELECT EXISTS(SELECT 1 FROM MainLock WHERE UID_NO = :uid)",
+              {'uid': uid_no})
+    data, = c.fetchone()
+    return(data)
 
-def select_count(n):
-    c.execute("SELECT COUNT FROM IPInfo WHERE IP_ADDRESS = :ipAddr",
-              {'ipAddr': n})
-    count = c.fetchone()
-    if count:
-        return(count)
-
-
-def update_count(n, b):
+def addUser(house_no, name, uid_no, cardType, fingerTemplate):
     with conn:
-        c.execute("""UPDATE IPInfo SET COUNT = :count
-                  WHERE IP_ADDRESS = :ipAddr""",
-                  {'count': b, 'ipAddr': n})
+        c.execute("""INSERT INTO MainLock 
+                  VALUES(:house, :name, :uid, :card, :temp, :state)""",
+                  {'house': house_no, 'name': name, 'uid': uid_no, 'card': cardType,
+                   'temp': fingerTemplate, 'state': 0})
 
-def updateTemplate(name, template):
+
+def updateTemplate(uid_no, template):
     # print(template)
     with conn:
-        c.execute("""UPDATE MainLock SET FINGERPRINT_IMAGE = :image
-                   WHERE NAME = :name""", {'name': name, 'image': template})
+        c.execute("""UPDATE MainLock SET FINGERPRINT_TEMPLATE = :image
+                   WHERE UID_NO = :uid""", {'uid': uid_no, 'image': template})
 
-def selectTemplate(name):
-    lst = []
-    c.execute("SELECT FINGERPRINT_IMAGE FROM MainLock WHERE NAME = :name", {'name': name})
+def selectTemplate(uid_no):
+    c.execute("SELECT FINGERPRINT_TEMPLATE FROM MainLock WHERE UID_NO = :uid", {'uid': uid_no})
     data = c.fetchone()
-    # print(len(data[0]))
     return(data)
-    # print(binascii.hexlify(data[0]))
-# updateTemplate('KENNEDY', imgDir)
-# selectTemplate('REGINA')
+
+def checkEntryState(uid_no):
+    c.execute("SELECT ENTRY_STATE FROM MainLock WHERE UID_NO = :uid", {'uid': uid_no})
+    data = c.fetchone()
+    return data
+
+def updateEntryState(uid_no, entryState):
+    with conn:
+        c.execute("UPDATE MainLock SET ENTRY_STATE = :entry WHERE UID_NO = :uid",
+         {'entry': entryState, 'uid': uid_no})
+
+def getName(uid_no):
+    c.execute("SELECT NAME FROM MainLock WHERE UID_NO = :uid", {'uid': uid_no})
+    data, = c.fetchone()
+    return data
+
+def removeUser(uid_no):
+    with conn:
+        c.execute("DELETE FROM MainLock WHERE UID_NO = :uid", {'uid': uid_no})
     # def add_sqlData(n):
     #     list = []
     #     idNo = 0

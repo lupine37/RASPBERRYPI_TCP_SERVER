@@ -1,35 +1,46 @@
 import struct
-from pyfingerprint2 import PyFingerprint
 import time
+from pyfingerprint2 import PyFingerprint
 import binascii
 import dataBase
+import MFRC522
+import RPi.GPIO as GPIO
 
 pack = [0xef01, 0xffffffff, 0x2]
-
-def ChangeToString(n):
-    s = ''
-    if len(str(n)) == 1:
-        s = '00' + str(n)
-        return(s)
-    elif len(str(n)) == 2:
-        s = '0' + str(n)
-        return(s)
-    else:
-        return(str(n))
+Reader = MFRC522.MFRC522()
+GPIO.setwarnings(False)
 
 
-def AddInstructionTemplates(data):
-    lst = []
-    str_f = 'B'  * len(data)  
-    lst.extend(struct.unpack(str_f, data))
-    pack2 = pack + [(len(lst) + 2)]
-    a = sum(pack2[-2:]) + sum(data)
-    s = struct.pack('@I', a)
-    print(s)
-    # pack_str = '@HIBH' + 'B' * len(data) + 'H'
-    # l = pack2 + data + a
-    # s = struct.pack(pack_str, *l)
-    # print(s)
+
+def readRFID():
+    while True:
+        status, TagType = Reader.MFRC522_Request(Reader.PICC_REQIDL)
+        if status == Reader.MI_OK:
+            print ("Card detected")
+
+        status, uid = Reader.MFRC522_Anticoll()
+        if status == Reader.MI_OK:
+            a = str(hex(uid[0])[2:])
+            b = str(hex(uid[1])[2:])
+            c = str(hex(uid[2])[2:])
+            d = str(hex(uid[3])[2:])
+            uid_s = a + b + c + d
+            key = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]
+
+            Reader.MFRC522_SelectTag(uid)
+
+            status = Reader.MFRC522_Auth(Reader.PICC_AUTHENT1A, 8, key, uid)
+
+            if status == Reader.MI_OK:
+                Reader.MFRC522_Read(8)
+                Reader.MFRC522_StopCrypto1()
+                break
+            else:
+                print("Authentication error")
+                break
+    GPIO.cleanup()
+    return uid_s
+
 
 def downloadTemplate():
     l = 0
@@ -53,32 +64,29 @@ def downloadTemplate():
         f.convertImage(0x01)
 
         print('Remove finger finger...')
-        # time.sleep(2)
+        time.sleep(2)
 
-        # print('Waiting for same finger again...')
-        # time.sleep(2)
-        # while (f.readImage() == False):
-        #     pass
+        print('Waiting for same finger again...')
+        time.sleep(2)
+        while (f.readImage() == False):
+            pass
 
-        # f.convertImage(0x02)
-        uploadTemplate('KENNEDY')
+        f.convertImage(0x02)
+        # uploadTemplate('KENNEDY')
 
         if (f.compareCharacteristics() == 0):
-            raise Exception('Finger do not match')
+            return('Finger do not match')
         
         else:
             print("fingerprint match")
-            # print(f.compareCharacteristics())
+            print(f.compareCharacteristics())
         
-        # f.createTemplate()
-        # characteristicData = f.downloadCharacteristics()
-        # print(characteristicData)
-        # l = len(characteristicData)
-        # print(l)
-        # form = 'B' * l
-        # temp = struct.pack(form, *characteristicData)
-        # print(temp)
-        # dataBase.updateTemplate('REGINA', temp)
+        f.createTemplate()
+        characteristicData = f.downloadCharacteristics()
+        l = len(characteristicData)
+        form = 'B' * l
+        temp = struct.pack(form, *characteristicData)
+        return temp
         
         
     except Exception as e:
@@ -110,7 +118,40 @@ def uploadTemplate(name):
     character = f.uploadCharacteristics(0x02, lst1)
     # # print(list)
     print(character)
-    
 
-downloadTemplate()
-# uploadTemplate('REGINA')
+def Main():
+    while True:
+        response  = input("TO ADD OR REMOVE A CARD OR EXIT: ")
+        if response == 'ADD':
+            print("PLACE YOUR CARD")
+            cardUID = readRFID()
+            print(cardUID)
+            cardState = dataBase.select_uidNo(cardUID)
+            if cardState == 1:
+                print("already Exist")
+            elif cardState == 0:
+                name = input("NAME: ")
+                house_no = input("HOUSE NO: ")
+                cardType = input("CARD TYPE: ")
+                fingerTemp = downloadTemplate()
+                dataBase.addUser(house_no, name, cardUID, cardType, fingerTemp)
+        elif response == 'REMOVE':
+            print("PLACE YOUR CARD")
+            cardUID = readRFID()
+            cardState = dataBase.select_uidNo(cardUID)
+            if cardState == 0:
+                print("Card does not exist")
+            elif cardState == 1:
+                name = dataBase.getName(cardUID)
+                response2 = input("ARE YOU SURE FOR REMOVING " + name + ": ")
+                if response2 == 'YES':
+                    dataBase.removeUser(cardUID)
+                else:
+                    pass
+        elif response == 'EXIT':
+            print("Exit from Enrolling")
+            break
+                
+
+if __name__ == "__main__":
+    Main()

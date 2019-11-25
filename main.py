@@ -14,6 +14,7 @@ Access = "<GRANTED>"
 Denied = "<DENIED>"
 startMarker = '<'
 endMarker = '>'
+breakTime = False
 
 
 class rfidUID:
@@ -25,6 +26,7 @@ class rfidUID:
         self.uid_no = list[2]
         self.card_type = list[3]
         self.template = list[4]
+        self.entryState = list[5]
 
 
 def ChangeToString(n):
@@ -38,10 +40,9 @@ def ChangeToString(n):
     else:
         return(str(n))
 
-def recvFingerTemplate(data, name):
+def recvFingerTemplate(data, uid_no):
     lst = []
     lst2 = []
-    dbList = []
     appendState = False
         # print(data)
     for c in data:
@@ -55,23 +56,21 @@ def recvFingerTemplate(data, name):
                 lst.append(int(s))
                 lst2 = []
                 appendState = False
-        # print(lst)
-        # print(len(lst))
     form = 'B' * len(lst)
     temp = struct.pack(form, *lst)
     print(temp)
-    dataBase.updateTemplate(name, temp)
-    dbData = dataBase.selectTemplate(name)
-    print(binascii.hexlify(dbData[0]))
+    dataBase.updateTemplate(uid_no, temp)
+    dbData = dataBase.selectTemplate(uid_no)
+    # print(binascii.hexlify(dbData[0]))
     print(len(dbData[0]))
 
 
-def sendFingerTemplate(name, ipAddr):
+def sendFingerTemplate(uid_no, ipAddr):
     dbData = []
     dbList = []
-    dbData = dataBase.selectTemplate(name)
+    dbData = dataBase.selectTemplate(uid_no)
     l = len(dbData[0])
-    print(binascii.hexlify(dbData[0]))
+    # print(binascii.hexlify(dbData[0]))
     print(l)
     form = 'B' * l
     dbList.extend(struct.unpack(form, dbData[0]))
@@ -100,29 +99,41 @@ def Main():
                 except Exception:
                     print("wrong card")
                 print(dataInfo.name)
-                if dataInfo.uid_no == data:
+                print(bool(dataInfo.entryState))
+                if dataInfo.uid_no == data and bool(dataInfo.entryState == False):
                     print(Access)
                     Server.sendData(template, ipAddr)
                     templateState = True
+                    startTime = time.time()
                     while True:
-                        Server_data = Server.recvData()
-                        if Server_data is not None:
-                            print(Server_data[0])
-                            if Server_data[0] == 'fingerTemplate' and templateState == True:
-                                sendFingerTemplate(dataInfo.name, ipAddr)
-                                templateState = False
-                            elif Server_data[0] == 'Match':
-                                Server.sendData(Access, ipAddr)
-                                break
-                            elif Server_data[0] == 'NoMatch':
-                                Server.sendData(Denied, ipAddr)
-                                break
-                            elif Server_data[0] == 'break':
-                                break
+                        endTime = time.time()
+                        if (endTime - startTime > 15):
+                            print("timeout")
+                            break
+                        else:
+                            Server_data = Server.recvData()
+                            if Server_data is not None:
+                                print(Server_data[0])
+                                if Server_data[0] == 'fingerTemplate' and templateState == True:
+                                    sendFingerTemplate(dataInfo.uid_no, ipAddr)
+                                    templateState = False
+                                elif Server_data[0] == 'Match':
+                                    Server.sendData(Access, ipAddr)
+                                    dataBase.updateEntryState(dataInfo.uid_no, int(not bool(dataInfo.entryState)))
+                                    break
+                                elif Server_data[0] == 'NoMatch':
+                                    Server.sendData(Denied, ipAddr)
+                                    break
+                                elif Server_data[0] == 'break':
+                                    break
+                            elif (startTime - endTime) > 5:
+                                print("Timeout")
+                elif dataInfo.uid_no == data and bool(dataInfo.entryState) == True:
+                    Server.sendData(Access, ipAddr)
+                    dataBase.updateEntryState(dataInfo.uid_no, int(not bool(dataInfo.entryState)))
                 else:
                     print(Denied)
                     Server.sendData(Denied, ipAddr)
-                    dataBase.update_count(ipAddr[0], 0)
             else:
                 house_no = 'HOUSE' + str(house_no)
                 UIDInfo = dataBase.select_sqlData(house_no)
@@ -131,27 +142,11 @@ def Main():
                 print(UID_no)
                 print(data)
                 if data == UID_no:
-                    countdata = dataBase.select_count(ipAddr[0])
-                    for c in countdata:
-                        count = c
-                    count = count + 1
-                    print(count)
-                    dataBase.update_count(ipAddr[0], count)
-                else:
-                    countdata = dataBase.select_count(ipAddr[0])
-                    for c in countdata:
-                        count = c
-                    count = count - 1
-                    print(count)
-                    dataBase.update_count(ipAddr[0], count)
-                if count == 3:
                     print(Access)
                     Server.sendData(Access, ipAddr)
-                    dataBase.update_count(ipAddr[0], 0)
-                elif count == -3:
+                else:
                     print(Denied)
                     Server.sendData(Denied, ipAddr)
-                    dataBase.update_count(ipAddr[0], 0)
 
 
 if __name__ == '__main__':
