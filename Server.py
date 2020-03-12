@@ -95,12 +95,4 @@ def sendData(send_data, ipAddr):
                 addr = data.addr
                 if addr == ipAddr:
                     sock = key.fileobj
-                    # send_data = startMarker + recv_data + endMarker
-                    # print(recv_data, addr)
                     sock.send(send_data.encode('utf-8'))
-        # if key.fd == 7:
-        #     print(key.fileobj)
-        # if recvData is not None:
-        #     if mask & selectors.EVENT_WRITE:
-        #         print(recvData)
-        #         sock.sendto(recvData.encode('utf-8'), ipAddr)

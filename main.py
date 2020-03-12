@@ -58,11 +58,9 @@ def recvFingerTemplate(data, uid_no):
                 appendState = False
     form = 'B' * len(lst)
     temp = struct.pack(form, *lst)
-    print(temp)
     dataBase.updateTemplate(uid_no, temp)
     dbData = dataBase.selectTemplate(uid_no)
     # print(binascii.hexlify(dbData[0]))
-    print(len(dbData[0]))
 
 
 def sendFingerTemplate(uid_no, ipAddr):
@@ -71,7 +69,6 @@ def sendFingerTemplate(uid_no, ipAddr):
     dbData = dataBase.selectTemplate(uid_no)
     l = len(dbData[0])
     # print(binascii.hexlify(dbData[0]))
-    print(l)
     form = 'B' * l
     dbList.extend(struct.unpack(form, dbData[0]))
     Server.sendData(str('<'), ipAddr)
@@ -113,7 +110,6 @@ def Main():
                         else:
                             Server_data = Server.recvData()
                             if Server_data is not None:
-                                print(Server_data[0])
                                 if Server_data[0] == 'fingerTemplate' and templateState == True:
                                     sendFingerTemplate(dataInfo.uid_no, ipAddr)
                                     templateState = False

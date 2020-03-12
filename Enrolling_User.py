@@ -44,6 +44,7 @@ def readRFID():
 
 def downloadTemplate():
     l = 0
+    fingerState = True
     try:
         f = PyFingerprint('/dev/ttyUSB0', 57600, 0xFFFFFFFF, 0x00000000)
         
@@ -56,37 +57,36 @@ def downloadTemplate():
         exit(1)
 
     try:
-        print('Waiting for finger...')
-        time.sleep(2)
-        while (f.readImage() == False):
-            pass
+        while fingerState == True:
+            print('Waiting for finger...')
+            time.sleep(2)
+            while (f.readImage() == False):
+                pass
+                
+            f.convertImage(0x01)
+
+            print('Remove finger finger...')
+            time.sleep(2)
+            print('Waiting for same finger again...')
+            time.sleep(2)
+            while (f.readImage() == False):
+                pass
+
+            f.convertImage(0x02)
+            # uploadTemplate('KENNEDY')
+
+            if (f.compareCharacteristics() == 0):
+                print('Finger do not match')
             
-        f.convertImage(0x01)
-
-        print('Remove finger finger...')
-        time.sleep(2)
-
-        print('Waiting for same finger again...')
-        time.sleep(2)
-        while (f.readImage() == False):
-            pass
-
-        f.convertImage(0x02)
-        # uploadTemplate('KENNEDY')
-
-        if (f.compareCharacteristics() == 0):
-            return('Finger do not match')
-        
-        else:
-            print("fingerprint match")
-            print(f.compareCharacteristics())
-        
-        f.createTemplate()
-        characteristicData = f.downloadCharacteristics()
-        l = len(characteristicData)
-        form = 'B' * l
-        temp = struct.pack(form, *characteristicData)
-        return temp
+            else:
+                print("fingerprint match")
+                f.createTemplate()
+                characteristicData = f.downloadCharacteristics()
+                l = len(characteristicData)
+                form = 'B' * l
+                temp = struct.pack(form, *characteristicData)
+                fingerState = False
+                return temp
         
         
     except Exception as e:
@@ -99,7 +99,7 @@ def uploadTemplate(name):
     lst1 = []
     dBret = []
     try:
-        f = PyFingerprint('/dev/ttyUSB0', 57600, 0xFFFFFFFF, 0x00000000)
+        f = PyFingerprint('/devs/ttyUSB0', 57600, 0xFFFFFFFF, 0x00000000)
         
         if (f.verifyPassword() == False):
             raise ValueError('The given fingerprint Sensor password is wrong')
